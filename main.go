@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -19,6 +20,15 @@ type Todo struct {
 var TodoList []Todo
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
+type Booking struct {
+	Today         float32 `json:"today"`
+	Yesterday     float32 `json:"yesterday"`
+	CurrentMonth  float32 `json:"current_month"`
+	PreviousMonth float32 `json:"previous_month"`
+}
+
+var BookingsStorage map[int]Booking
+
 func RandStringRunes(n int) string {
 	b := make([]rune, n)
 	for i := range b {
@@ -33,6 +43,16 @@ func init() {
 	todo3 := Todo{ID: "c", Text: "Please do this or else", Done: false}
 	TodoList = append(TodoList, todo1, todo2, todo3)
 
+	bookingExample := Booking{Today: 5, Yesterday: 15, CurrentMonth: 1500, PreviousMonth: 2500}
+	//bookingExample["today"] = 5
+	//bookingExample["yesterday"] = 15
+	//bookingExample["current_month"] = 500
+	//bookingExample["previous_month"] = 2500
+
+	//AffiliateBookingExample := make(map[int]map[string]float32)
+	BookingsStorage = make(map[int]Booking)
+	BookingsStorage[19025] = bookingExample
+
 	rand.Seed(time.Now().UnixNano())
 }
 
@@ -40,6 +60,40 @@ func init() {
 // Note that
 // - the fields in our todoType maps with the json tags for the fields in our struct
 // - the field type matches the field type in our struct
+
+// Booking Type Ruby Implementation
+
+//class BookingType < BaseObject
+//STRUCT = Struct.new(:today, :yesterday, :current_month, :previous_month)
+//
+//description "Affiliate Summary Bookings List"
+//field :today, Float, null: false, description: "!!! Not implimented"
+//field :yesterday, Float, null: false, description: "!!! Not implimented"
+//field :current_month, Float, null: false, description: "!!! Not implimented"
+//field :previous_month, Float, null: false, description: "!!! Not implimented"
+
+var bookingType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "Booking",
+	Fields: graphql.Fields{
+		"today": &graphql.Field{
+			Type:        graphql.Float,
+			Description: "Write description",
+		},
+		"yesterday": &graphql.Field{
+			Type:        graphql.Float,
+			Description: "Write description",
+		},
+		"current_month": &graphql.Field{
+			Type:        graphql.Float,
+			Description: "Write description",
+		},
+		"previous_month": &graphql.Field{
+			Type:        graphql.Float,
+			Description: "Write description",
+		},
+	},
+})
+
 var todoType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "Todo",
 	Fields: graphql.Fields{
@@ -140,6 +194,30 @@ var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RootQuery",
 	Fields: graphql.Fields{
 
+		"booking": &graphql.Field{
+			Type:        bookingType,
+			Description: "Affiliate Booking Amount Stat",
+			Args: graphql.FieldConfigArgument{
+				"affiliate_id": &graphql.ArgumentConfig{
+
+					Type: graphql.Int,
+				},
+			},
+			Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+				affiliateId, isOK := params.Args["affiliate_id"].(int)
+				if isOK {
+					/*
+					  Обращаемся в хранилище букингов по affiliate_id
+					*/
+					bookings, err := BookingsStorage[affiliateId]
+					if err != false {
+						errors.New("Affiliate d not found")
+						return bookings, nil
+					}
+				}
+				return Booking{}, errors.New("Affiliate d not found")
+			},
+		},
 		/*
 		   curl -g 'http://localhost:8080/graphql?query={todo(id:"b"){id,text,done}}'
 		*/
